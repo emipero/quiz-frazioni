@@ -54,4 +54,97 @@ function QuizFrazioni() {
 
   const [nome, setNome] = React.useState("");
   const [risposte, setRisposte] = React.useState({});
-  const [es
+  const [esito, setEsito] = React.useState(null);
+
+  const punteggio = Object.keys(risposte).reduce((tot, indice) => {
+    return (
+      tot +
+      (Number(risposte[indice]) === domande[indice].corretta
+        ? 1
+        : 0)
+    );
+  }, 0);
+
+  const seleziona = (domandaIndex, rispostaIndex) => {
+    if (risposte[domandaIndex] !== undefined) {
+      return;
+    }
+
+    setRisposte({
+      ...risposte,
+      [domandaIndex]: rispostaIndex
+    });
+  };
+
+  const invia = async () => {
+    const risultato = {
+      nome,
+      punteggio,
+      totale: domande.length,
+      percentuale: Math.round(
+        (punteggio / domande.length) * 100
+      ),
+      data: new Date().toISOString()
+    };
+
+    try {
+      await fetch(
+        "https://quiz-api.basketnotes.workers.dev/risultati",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(risultato)
+        }
+      );
+
+      setEsito(risultato);
+
+    } catch (err) {
+
+      console.error(err);
+
+      alert(
+        "Errore nel salvataggio dei risultati"
+      );
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-900 text-white p-6">
+      <div className="max-w-4xl mx-auto">
+
+        <h1 className="text-4xl font-bold text-center mb-6">
+          🎯 Quiz Frazioni e Decimali
+        </h1>
+
+        <div className="bg-white rounded-xl p-4 mb-6">
+          <label className="block text-black font-semibold mb-2">
+            Nome e Cognome
+          </label>
+
+          <input
+            value={nome}
+            onChange={(e) => setNome(e.target.value)}
+            className="w-full border rounded p-3 text-black"
+          />
+        </div>
+
+        {domande.map((domanda, indice) => {
+          const rispostaData = risposte[indice];
+
+          return (
+            <div
+              key={indice}
+              className="bg-white text-black rounded-xl p-5 mb-4"
+            >
+              <h2 className="font-bold mb-4">
+                {indice + 1}. {domanda.testo}
+              </h2>
+
+              {domanda.opzioni.map((opzione, opIndex) => {
+
+                let classe = "bg-slate-100 hover:bg-slate-200";
+
+                if (rispostaData !== 
