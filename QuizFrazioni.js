@@ -66,15 +66,15 @@ function QuizFrazioni() {
     );
   }, 0);
 
-  const seleziona = (domanda, risposta) => {
+  const seleziona = (domandaIndex, rispostaIndex) => {
 
-    if (risposte[domanda] !== undefined) {
+    if (risposte[domandaIndex] !== undefined) {
       return;
     }
 
     setRisposte({
       ...risposte,
-      [domanda]: risposta
+      [domandaIndex]: rispostaIndex
     });
   };
 
@@ -109,9 +109,7 @@ function QuizFrazioni() {
 
       console.error(err);
 
-      alert(
-        "Errore nel salvataggio dei risultati"
-      );
+      alert("Errore nel salvataggio dei risultati");
     }
   };
 
@@ -143,7 +141,6 @@ function QuizFrazioni() {
           const rispostaData = risposte[indice];
 
           return (
-
             <div
               key={indice}
               className="bg-white text-black rounded-xl p-5 mb-4"
@@ -155,50 +152,38 @@ function QuizFrazioni() {
 
               {domanda.opzioni.map((opzione, opIndex) => {
 
-                let classe =
-                  "bg-slate-100 hover:bg-slate-200";
+                let classe = "bg-slate-100 hover:bg-slate-200";
 
                 if (rispostaData !== undefined) {
 
                   if (opIndex === domanda.corretta) {
-                    classe =
-                      "bg-green-500 text-white";
+                    classe = "bg-green-500 text-white";
                   }
 
                   if (
                     Number(rispostaData) === opIndex &&
                     opIndex !== domanda.corretta
                   ) {
-                    classe =
-                      "bg-red-500 text-white";
+                    classe = "bg-red-500 text-white";
                   }
                 }
 
                 return (
-
                   <button
                     key={opIndex}
                     disabled={rispostaData !== undefined}
-                    onClick={() =>
-                      seleziona(indice, opIndex)
-                    }
+                    onClick={() => seleziona(indice, opIndex)}
                     className={`block w-full text-left p-3 rounded mb-2 ${classe}`}
-                  >
-                    {opzione}
+                        {opzione}
                   </button>
-
                 );
               })}
-
             </div>
-
           );
         })}
 
         <div className="bg-slate-800 p-4 rounded-xl mb-6">
-
           ⭐ {punteggio}/{domande.length}
-
         </div>
 
         <button
@@ -213,27 +198,23 @@ function QuizFrazioni() {
         </button>
 
         {esito && (
-
           <div className="bg-white text-black p-6 rounded-xl mt-8">
 
-            <h2 className="text-2xl font-bold">
+            <h2 className="text-2xl font-bold mb-4">
               Quiz completato
             </h2>
 
-            <p>
-              {esito.nome}
-            </p>
+            <p>{esito.nome}</p>
 
             <p>
               {esito.punteggio}/{esito.totale}
             </p>
 
             <p>
-    esito.percentuale}%
+              {esito.percentuale}%
             </p>
 
           </div>
-
         )}
 
       </div>
