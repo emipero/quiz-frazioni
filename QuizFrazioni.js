@@ -16,38 +16,13 @@ function QuizFrazioni() {
       corretta: 0
     },
     {
-      testo: "0,4 + 0,3 =",
+      testo: "0,4 + 0,3 = ...",
       opzioni: ["0,6", "0,7", "0,8"],
       corretta: 1
     },
     {
       testo: "0,75 corrisponde a...",
       opzioni: ["3/4", "1/4", "7/10"],
-      corretta: 0
-    },
-    {
-      testo: "Quale frazione è maggiore?",
-      opzioni: ["2/3", "3/5", "Sono uguali"],
-      corretta: 0
-    },
-    {
-      testo: "Quanto vale (-2)³ ?",
-      opzioni: ["8", "-8", "-6"],
-      corretta: 1
-    },
-    {
-      testo: "Quanto fa 1/4 + 1/2 ?",
-      opzioni: ["3/4", "1/2", "2/6"],
-      corretta: 0
-    },
-    {
-      testo: "Quanto fa 5/6 - 1/3 ?",
-      opzioni: ["2/6", "3/6", "4/6"],
-      corretta: 1
-    },
-    {
-      testo: "Quanto fa 2/3 × 3/4 ?",
-      opzioni: ["1/2", "5/7", "6/12"],
       corretta: 0
     }
   ];
@@ -56,95 +31,100 @@ function QuizFrazioni() {
   const [risposte, setRisposte] = React.useState({});
   const [esito, setEsito] = React.useState(null);
 
-  const punteggio = Object.keys(risposte).reduce((tot, indice) => {
-    return (
-      tot +
-      (Number(risposte[indice]) === domande[indice].corretta
-        ? 1
-        : 0)
-    );
-  }, 0);
-
-  const seleziona = (domandaIndex, rispostaIndex) => {
-    if (risposte[domandaIndex] !== undefined) {
-      return;
-    }
-
+  const seleziona = (domandaIndex, opzioneIndex) => {
     setRisposte({
       ...risposte,
-      [domandaIndex]: rispostaIndex
+      [domandaIndex]: opzioneIndex
     });
   };
 
-  const invia = async () => {
-    const risultato = {
+  const punteggio = Object.keys(risposte).reduce(
+    (tot, indice) =>
+      tot +
+      (Number(risposte[indice]) ===
+      domande[indice].corretta
+        ? 1
+        : 0),
+    0
+  );
+
+  const invia = () => {
+    setEsito({
       nome,
       punteggio,
       totale: domande.length,
       percentuale: Math.round(
         (punteggio / domande.length) * 100
-      ),
-      data: new Date().toISOString()
-    };
-
-    try {
-      await fetch(
-        "https://quiz-api.basketnotes.workers.dev/risultati",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(risultato)
-        }
-      );
-
-      setEsito(risultato);
-
-    } catch (err) {
-
-      console.error(err);
-
-      alert(
-        "Errore nel salvataggio dei risultati"
-      );
-    }
+      )
+    });
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white p-6">
-      <div className="max-w-4xl mx-auto">
+    <div className="p-6 max-w-4xl mx-auto">
+      <h1 className="text-3xl font-bold mb-4">
+        Quiz Frazioni e Decimali
+      </h1>
 
-        <h1 className="text-4xl font-bold text-center mb-6">
-          🎯 Quiz Frazioni e Decimali
-        </h1>
+      <input
+        className="border p-2 w-full mb-4"
+        placeholder="Nome e Cognome"
+        value={nome}
+        onChange={(e) => setNome(e.target.value)}
+      />
 
-        <div className="bg-white rounded-xl p-4 mb-6">
-          <label className="block text-black font-semibold mb-2">
-            Nome e Cognome
-          </label>
+      {domande.map((domanda, indice) => (
+        <div
+          key={indice}
+          className="border rounded p-4 mb-4"
+        >
+          <h2 className="font-bold mb-3">
+            {indice + 1}. {domanda.testo}
+          </h2>
 
-          <input
-            value={nome}
-            onChange={(e) => setNome(e.target.value)}
-            className="w-full border rounded p-3 text-black"
-          />
-        </div>
-
-        {domande.map((domanda, indice) => {
-          const rispostaData = risposte[indice];
-
-          return (
-            <div
-              key={indice}
-              className="bg-white text-black rounded-xl p-5 mb-4"
+          {domanda.opzioni.map((opzione, opIndex) => (
+            <button
+              key={opIndex}
+              className="block border rounded p-2 mb-2 w-full text-left"
+              onClick={() =>
+                seleziona(indice, opIndex)
+              }
             >
-              <h2 className="font-bold mb-4">
-                {indice + 1}. {domanda.testo}
-              </h2>
+              {opzione}
+            </button>
+          ))}
+        </div>
+      ))}
 
-              {domanda.opzioni.map((opzione, opIndex) => {
+      <button
+        onClick={invia}
+        className="bg-blue-600 text-white px-6 py-3 rounded"
+      >
+        Consegna Quiz
+      </button>
 
-                let classe = "bg-slate-100 hover:bg-slate-200";
+      {esito && (
+        <div className="mt-6 border rounded p-4">
+          <h2 className="text-xl font-bold">
+            Quiz completato
+          </h2>
 
-                if (rispostaData !== 
+          <p>{esito.nome}</p>
+
+          <p>
+            {esito.punteggio}/{esito.totale}
+          </p>
+
+          <p>
+            {esito.percentuale}%
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(
+  document.getElementById("root")
+);
+
+root.render(<QuizFrazioni />);
