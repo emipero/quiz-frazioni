@@ -61,7 +61,11 @@ export default function QuizFrazioni() {
 
     setRisposte({
       ...risposte,
-      [domandaIndex]: rispostaIndex const punteggio = Object.keys(risposte).reduce((tot, indice) => {
+      [domandaIndex]: rispostaIndex
+    });
+  };
+
+  const punteggio = Object.keys(risposte).reduce((tot, indice) => {
     return (
       tot +
       (Number(risposte[indice]) === domande[indice].corretta
