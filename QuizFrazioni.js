@@ -1,658 +1,524 @@
 
-export default function QuizFrazioni() {
-  const domande = [
-    {
-      testo: "0,5 corrisponde a...",
-      opzioni: ["1/4", "1/2", "3/4"],
-      corretta: 1
-    },
-    {
-      testo: "3/10 in forma decimale è...",
-      opzioni: ["0,03", "0,3", "3"],
-      corretta: 1
-    },
-    {
-      testo: "0,25 corrisponde a...",
-      opzioni: ["1/4", "1/2", "1/5"],
-      corretta: 0
-    },
-    {
-      testo: "0,4 + 0,3 = ...",
-      opzioni: ["0,6", "0,7", "0,8"],
-      corretta: 1
-    },
-    {
-      testo: "0,75 corrisponde a...",
-      opzioni: ["3/4", "1/4", "7/10"],
-      corretta: 0
-    },
-    {
-      testo: "Quale frazione è maggiore?",
-      opzioni: ["2/3", "3/5", "Sono uguali"],
-      corretta: 0
-    },
-    {
-      testo: "Quanto vale (-2)³?",
-      opzioni: ["8", "-8", "-6"],
-      corretta: 1
-    },
-    {
-      testo: "Quanto fa 1/4 + 1/2?",
-      opzioni: ["3/4", "1/2", "2/6"],
-      corretta: 0
-    },
-    {
-      testo: "Quanto fa 5/6 - 1/3?",
-      opzioni: ["2/6", "3/6", "4/6"],
-      corretta: 1
-    },
-    {
-      testo: "Quanto fa 2/3 × 3/4?",
-      opzioni: ["1/2", "5/7", "6/12"],
-      corretta: 0
-    }
-  ];
+const { useState } = React;
 
-  const [nome, setNome] = React.useState("");
-  const [risposte, setRisposte] = React.useState({});
-  const [esito, setEsito] = React.useState(null);
-  const [salvataggio, setSalvataggio] = React.useState(false);
-  const [errore, setErrore] = React.useState("");
+const API_URL = "https://quiz-api.basketnotes.workers.dev";
 
-  const punteggio = Object.keys(risposte).reduce(
-    (totale, indice) =>
-      totale +
-      (Number(risposte[indice]) === domande[indice].corretta
-        ? 1
-        : 0),
+const QUESTIONS = [
+  {
+    question: "A quale frazione corrisponde il numero decimale 0,5?",
+    options: ["1/3", "1/2", "1/4", "2/5"],
+    correct: 1,
+    explanation: "0,5 significa cinque decimi: 5/10, che si semplifica in 1/2."
+  },
+  {
+    question: "Qual è la scrittura decimale della frazione 3/10?",
+    options: ["0,03", "0,3", "3,10", "0,13"],
+    correct: 1,
+    explanation: "Tre decimi corrispondono a 0,3."
+  },
+  {
+    question: "Quale frazione corrisponde a 0,25?",
+    options: ["1/4", "1/5", "2/5", "3/4"],
+    correct: 0,
+    explanation: "0,25 = 25/100 = 1/4."
+  },
+  {
+    question: "Quanto fa 0,4 + 0,3?",
+    options: ["0,7", "0,12", "0,34", "0,6"],
+    correct: 0,
+    explanation: "Quattro decimi più tre decimi sono sette decimi: 0,7."
+  },
+  {
+    question: "Quale frazione corrisponde a 0,75?",
+    options: ["3/4", "1/4", "2/5", "1/2"],
+    correct: 0,
+    explanation: "0,75 = 75/100 = 3/4."
+  },
+  {
+    question: "Quale frazione è maggiore?",
+    options: ["2/3", "1/2", "1/3", "1/4"],
+    correct: 0,
+    explanation: "2/3 è maggiore di 1/2, 1/3 e 1/4."
+  },
+  {
+    question: "Quanto vale (-2)³?",
+    options: ["8", "-8", "-6", "6"],
+    correct: 1,
+    explanation: "(-2) · (-2) · (-2) = 4 · (-2) = -8."
+  },
+  {
+    question: "Quanto fa 1/4 + 1/2?",
+    options: ["3/4", "2/6", "1/6", "1/4"],
+    correct: 0,
+    explanation: "1/2 = 2/4, quindi 1/4 + 2/4 = 3/4."
+  },
+  {
+    question: "Quanto fa 5/6 - 1/3?",
+    options: ["4/3", "3/6", "4/6", "1/2"],
+    correct: 1,
+    explanation: "1/3 = 2/6, quindi 5/6 - 2/6 = 3/6."
+  },
+  {
+    question: "Quanto fa 2/3 × 3/4?",
+    options: ["1/2", "5/7", "6/7", "2/4"],
+    correct: 0,
+    explanation: "(2 · 3)/(3 · 4) = 6/12 = 1/2."
+  }
+];
+
+const STYLES = `
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: #0b1020;
+    color: #f4f6ff;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
+  }
+  button, input { font: inherit; }
+  button { cursor: pointer; }
+  button:disabled { cursor: not-allowed; opacity: .6; }
+  .qf-app {
+    min-height: 100vh;
+    padding: 28px 16px 48px;
+    background:
+      radial-gradient(ellipse at 15% 0%, #243a70 0, transparent 38%),
+      radial-gradient(ellipse at 100% 70%, #342052 0, transparent 35%),
+      #0b1020;
+  }
+  .qf-wrap { max-width: 760px; margin: 0 auto; }
+  .qf-top {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 12px; margin-bottom: 24px;
+  }
+  .qf-brand { font-size: 15px; font-weight: 800; letter-spacing: .08em; }
+  .qf-tag {
+    padding: 7px 12px; border: 1px solid #354363;
+    border-radius: 999px; color: #c6d2f7; font-size: 12px;
+  }
+  .qf-card {
+    background: rgba(19, 27, 49, .94);
+    border: 1px solid #293653;
+    border-radius: 24px; padding: clamp(20px, 5vw, 36px);
+    box-shadow: 0 24px 80px rgba(0,0,0,.24);
+  }
+  .qf-kicker {
+    color: #9baeff; font-size: 12px; font-weight: 800;
+    text-transform: uppercase; letter-spacing: .12em;
+  }
+  .qf-title {
+    font-size: clamp(28px, 5vw, 42px); line-height: 1.12;
+    margin: 12px 0; letter-spacing: -.04em;
+  }
+  .qf-sub { color: #b8c2dc; line-height: 1.65; margin: 0 0 24px; }
+  .qf-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .qf-label { display: block; font-size: 13px; color: #cbd4ed; margin-bottom: 7px; }
+  .qf-input {
+    width: 100%; padding: 13px 14px; border-radius: 12px;
+    background: #0e162b; border: 1px solid #394766;
+    color: white; outline: none;
+  }
+  .qf-input:focus { border-color: #9aabff; box-shadow: 0 0 0 3px #7588ff20; }
+  .qf-button {
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: 8px; width: 100%; padding: 14px 18px; margin-top: 20px;
+    border: 0; border-radius: 13px; color: #10152a;
+    background: linear-gradient(100deg, #a8b8ff, #c7a8ff);
+    font-weight: 800; transition: transform .15s, filter .15s;
+  }
+  .qf-button:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.06); }
+  .qf-button-secondary {
+    background: #202c48; color: #eef1ff; border: 1px solid #3b4b70;
+  }
+  .qf-progress-head {
+    display: flex; justify-content: space-between; gap: 12px;
+    color: #b9c5e1; font-size: 13px; margin-bottom: 10px;
+  }
+  .qf-progress {
+    height: 8px; border-radius: 99px; overflow: hidden;
+    background: #27324d; margin-bottom: 28px;
+  }
+  .qf-progress-fill {
+    height: 100%; border-radius: inherit;
+    background: linear-gradient(90deg, #7c96ff, #d1a8ff);
+    transition: width .3s ease;
+  }
+  .qf-question { font-size: clamp(22px, 4vw, 30px); line-height: 1.35; margin: 10px 0 24px; }
+  .qf-options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .qf-option {
+    min-height: 62px; text-align: left; padding: 16px;
+    border: 1px solid #354363; border-radius: 14px;
+    background: #111a30; color: #f4f6ff;
+    transition: border-color .15s, background .15s, transform .15s;
+  }
+  .qf-option:hover:not(:disabled) { border-color: #9baeff; transform: translateY(-1px); }
+  .qf-option.qf-correct { border-color: #47d6a2; background: #123a35; }
+  .qf-option.qf-wrong { border-color: #ff8798; background: #442534; }
+  .qf-option:disabled { opacity: 1; }
+  .qf-feedback {
+    padding: 15px 16px; border-radius: 13px; margin-top: 18px;
+    background: #0e162b; border: 1px solid #34415f; line-height: 1.6;
+  }
+  .qf-feedback strong { display: block; margin-bottom: 4px; }
+  .qf-success { color: #70edbc; }
+  .qf-error { color: #ffabb7; }
+  .qf-muted { color: #b9c5e1; font-size: 13px; line-height: 1.6; }
+  .qf-result { text-align: center; }
+  .qf-score {
+    width: 142px; height: 142px; margin: 24px auto;
+    border: 7px solid #788eff; border-radius: 50%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: #111a30; box-shadow: 0 0 50px #778cff25;
+  }
+  .qf-score-number { font-size: 42px; font-weight: 900; letter-spacing: -.05em; }
+  .qf-badge {
+    display: inline-block; padding: 9px 14px; margin: 5px;
+    border: 1px solid #665c99; background: #282344; border-radius: 999px;
+    color: #e0d4ff; font-size: 13px; font-weight: 800;
+  }
+  .qf-confetti {
+    position: fixed; top: -20px; width: 9px; height: 13px;
+    z-index: 5; pointer-events: none;
+    animation: qf-fall 3.3s linear forwards;
+  }
+  @keyframes qf-fall {
+    0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(110vh) rotate(720deg); opacity: .1; }
+  }
+  .qf-footer { text-align: center; color: #8d9ab9; font-size: 12px; margin-top: 18px; }
+  @media (max-width: 520px) {
+    .qf-fields, .qf-options { grid-template-columns: 1fr; }
+    .qf-top { align-items: flex-start; }
+    .qf-tag { font-size: 11px; }
+  }
+`;
+
+function QuizFrazioni() {
+  const [nome, setNome] = useState("");
+  const [cognome, setCognome] = useState("");
+  const [started, setStarted] = useState(false);
+  const [index, setIndex] = useState(0);
+  const [answers, setAnswers] = useState([]);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const [finished, setFinished] = useState(false);
+
+  const total = QUESTIONS.length;
+  const score = answers.reduce(
+    (sum, answer, i) => sum + (answer === QUESTIONS[i].correct ? 1 : 0),
     0
   );
+  const percent = Math.round((score / total) * 100);
+  const current = QUESTIONS[index];
+  const answered = answers[index] !== undefined;
 
-  const completate = Object.keys(risposte).length;
-  const percentualeAvanzamento =
-    (completate / domande.length) * 100;
+  function chooseAnswer(optionIndex) {
+    if (answered) return;
+    setAnswers((previous) => {
+      const next = [...previous];
+      next[index] = optionIndex;
+      return next;
+    });
+  }
 
-  const selezionaRisposta = (domandaIndex, rispostaIndex) => {
-    if (
-      risposte[domandaIndex] !== undefined ||
-      esito !== null ||
-      salvataggio
-    ) {
-      return;
+  function nextQuestion() {
+    if (index < total - 1) {
+      setIndex((previous) => previous + 1);
+    } else {
+      setFinished(true);
     }
+  }
 
-    setRisposte((precedenti) => ({
-      ...precedenti,
-      [domandaIndex]: rispostaIndex
-    }));
-  };
+  async function saveResult() {
+    if (saving || saved) return;
 
-  const invia = async () => {
-    if (
-      !nome.trim() ||
-      completate !== domande.length ||
-      salvataggio ||
-      esito !== null
-    ) {
-      return;
-    }
+    setSaving(true);
+    setSaveError("");
 
-    setErrore("");
-    setSalvataggio(true);
-
-    const risultato = {
-      nome: nome.trim(),
-      punteggio,
-      totale: domande.length,
-      percentuale: Math.round(
-        (punteggio / domande.length) * 100
-      ),
-      data: new Date().toISOString()
-    };
+    const fullName = `${nome.trim()} ${cognome.trim()}`.trim();
 
     try {
-      const response = await fetch(
-        "https://quiz-api.basketnotes.workers.dev/risultati",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(risultato)
-        }
-      );
+      const response = await fetch(`${API_URL}/risultati`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nome: fullName,
+          punteggio: score,
+          totale: total,
+          percentuale: percent,
+          data: new Date().toISOString()
+        })
+      });
 
       if (!response.ok) {
-        throw new Error(
-          `Errore HTTP ${response.status}`
-        );
+        throw new Error(`Il server ha risposto con codice ${response.status}.`);
       }
 
-      const conferma = await response.json();
-
-      if (!conferma.success) {
-        throw new Error("Salvataggio non confermato");
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error("Il server non ha confermato il salvataggio.");
       }
 
-      setEsito(risultato);
+      setSaved(true);
     } catch (error) {
-      console.error("Errore nel salvataggio:", error);
-
-      setErrore(
-        "Non siamo riusciti a salvare il risultato. " +
-        "Controlla la connessione e riprova."
+      console.error("Errore nel salvataggio del quiz:", error);
+      setSaveError(
+        "Non siamo riusciti a salvare il risultato. Controlla la connessione e riprova."
       );
     } finally {
-      setSalvataggio(false);
+      setSaving(false);
     }
-  };
+  }
 
-  const ricomincia = () => {
-    setRisposte({});
-    setEsito(null);
-    setErrore("");
-    setSalvataggio(false);
-    setNome("");
+  function restartQuiz() {
+    setStarted(false);
+    setIndex(0);
+    setAnswers([]);
+    setSaving(false);
+    setSaved(false);
+    setSaveError("");
+    setFinished(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+  }
 
-  const celebrato = esito !== null && esito.percentuale >= 80;
+  React.useEffect(() => {
+    if (!finished || saved || saving) return;
 
-  const badge = esito
-    ? esito.percentuale >= 90
-      ? {
-          icona: "🏆",
-          titolo: "Campione delle frazioni",
-          descrizione: "Prestazione eccellente!"
-        }
-      : esito.percentuale >= 80
-        ? {
-            icona: "🥇",
-            titolo: "Maestro delle frazioni",
-            descrizione: "Obiettivo raggiunto!"
-          }
-        : esito.percentuale >= 60
-          ? {
-              icona: "🥈",
-              titolo: "Esploratore matematico",
-              descrizione: "Buon lavoro, continua così!"
-            }
-          : {
-              icona: "🌱",
-              titolo: "Primi passi",
-              descrizione: "Allenarsi è il modo per migliorare!"
-            }
-    : null;
+    // Il salvataggio parte quando viene mostrata la schermata finale.
+    saveResult();
+  }, [finished]);
+
+  React.useEffect(() => {
+    if (!finished || percent < 80) return;
+
+    const colors = ["#9aabff", "#e3a7ff", "#65e8bd", "#ffd166", "#ff8fab"];
+    const pieces = [];
+
+    for (let i = 0; i < 75; i++) {
+      const piece = document.createElement("span");
+      piece.className = "qf-confetti";
+      piece.style.left = `${Math.random() * 100}%`;
+      piece.style.background = colors[i % colors.length];
+      piece.style.animationDelay = `${Math.random() * 1.4}s`;
+      piece.style.animationDuration = `${2.5 + Math.random() * 2}s`;
+      document.body.appendChild(piece);
+      pieces.push(piece);
+    }
+
+    const timeout = window.setTimeout(() => {
+      pieces.forEach((piece) => piece.remove());
+    }, 6000);
+
+    return () => {
+      window.clearTimeout(timeout);
+      pieces.forEach((piece) => piece.remove());
+    };
+  }, [finished]);
 
   return (
-    <div className="quiz-app min-h-screen px-4 py-6 sm:px-6 sm:py-10">
-      <style>{`
-        * {
-          box-sizing: border-box;
-        }
+    <>
+      <style>{STYLES}</style>
 
-        .quiz-app {
-          color: #f1f5f9;
-          background:
-            radial-gradient(ellipse at top left, #28365d 0%, transparent 45%),
-            radial-gradient(ellipse at bottom right, #3b2458 0%, transparent 40%),
-            #101827;
-          font-family: Inter, system-ui, -apple-system, sans-serif;
-        }
+      <main className="qf-app">
+        <div className="qf-wrap">
+          <header className="qf-top">
+            <div className="qf-brand">✦ MISSIONE MATEMATICA</div>
+            <div className="qf-tag">QUIZ · FRAZIONI</div>
+          </header>
 
-        .quiz-panel {
-          background: rgba(25, 36, 56, 0.92);
-          border: 1px solid rgba(148, 163, 184, 0.20);
-          box-shadow: 0 18px 50px rgba(0, 0, 0, 0.18);
-          backdrop-filter: blur(12px);
-        }
+          {!started && !finished && (
+            <section className="qf-card">
+              <div className="qf-kicker">Pronto per la sfida?</div>
+              <h1 className="qf-title">La matematica è una missione.</h1>
+              <p className="qf-sub">
+                Mettiti alla prova con 10 domande su frazioni, numeri decimali
+                e potenze. Rispondi con attenzione e conquista il tuo badge!
+              </p>
 
-        .quiz-option {
-          width: 100%;
-          min-height: 58px;
-          padding: 12px 16px;
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          text-align: left;
-          color: #e2e8f0;
-          background: #202d43;
-          border: 1px solid #3b4a63;
-          border-radius: 14px;
-          transition: background 160ms ease, border-color 160ms ease,
-            transform 160ms ease;
-        }
-
-        .quiz-option:not(:disabled):hover {
-          background: #2b3a55;
-          border-color: #818cf8;
-          transform: translateY(-1px);
-        }
-
-        .quiz-option:focus-visible,
-        .quiz-primary:focus-visible {
-          outline: 3px solid #a5b4fc;
-          outline-offset: 3px;
-        }
-
-        .quiz-option:disabled {
-          cursor: default;
-        }
-
-        .quiz-option.correct {
-          background: #123d37;
-          border-color: #34d399;
-        }
-
-        .quiz-option.wrong {
-          background: #482733;
-          border-color: #fb7185;
-        }
-
-        .quiz-primary {
-          width: 100%;
-          min-height: 52px;
-          border-radius: 14px;
-          padding: 13px 18px;
-          font-weight: 750;
-          color: #fff;
-          background: linear-gradient(100deg, #6366f1, #8b5cf6);
-          box-shadow: 0 8px 24px rgba(99, 102, 241, 0.24);
-          transition: filter 160ms ease, transform 160ms ease;
-        }
-
-        .quiz-primary:not(:disabled):hover {
-          filter: brightness(1.12);
-          transform: translateY(-1px);
-        }
-
-        .quiz-primary:disabled {
-          cursor: not-allowed;
-          opacity: 0.45;
-          box-shadow: none;
-        }
-
-        .quiz-input {
-          width: 100%;
-          min-height: 48px;
-          padding: 12px 14px;
-          border-radius: 12px;
-          color: #f8fafc;
-          background: #111c2e;
-          border: 1px solid #475569;
-        }
-
-        .quiz-input:focus {
-          outline: 2px solid #818cf8;
-          outline-offset: 2px;
-        }
-
-        .quiz-progress {
-          height: 9px;
-          overflow: hidden;
-          border-radius: 999px;
-          background: #334155;
-        }
-
-        .quiz-progress-fill {
-          height: 100%;
-          border-radius: inherit;
-          background: linear-gradient(90deg, #818cf8, #c084fc);
-          transition: width 300ms ease;
-        }
-
-        .quiz-confetti {
-          position: fixed;
-          top: -20px;
-          width: 9px;
-          height: 14px;
-          z-index: 50;
-          pointer-events: none;
-          animation: quiz-fall 2.8s ease-in forwards;
-        }
-
-        @keyframes quiz-fall {
-          0% {
-            transform: translate3d(0, -10px, 0) rotate(0deg);
-            opacity: 1;
-          }
-          100% {
-            transform: translate3d(35px, 105vh, 0) rotate(720deg);
-            opacity: 0;
-          }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          *, *::before, *::after {
-            scroll-behavior: auto !important;
-            animation-duration: 0.01ms !important;
-            animation-iteration-count: 1 !important;
-            transition-duration: 0.01ms !important;
-          }
-        }
-      `}</style>
-
-      <div className="mx-auto max-w-3xl">
-        <header className="mb-8 flex items-center justify-between gap-3">
-          <div>
-            <div className="mb-2 text-xs font-bold uppercase tracking-widest text-indigo-300">
-              MATEMATICA · MISSIONE 01
-            </div>
-            <h1 className="text-2xl font-black tracking-tight sm:text-4xl">
-              La sfida delle frazioni
-            </h1>
-            <p className="mt-2 text-sm text-slate-400">
-              Dieci domande per mettere alla prova le tue abilità.
-            </p>
-          </div>
-
-          <div className="hidden rounded-2xl border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-center sm:block">
-            <div className="text-2xl">⚡</div>
-            <div className="text-xs font-bold text-amber-200">
-              QUIZ XP
-            </div>
-          </div>
-        </header>
-
-        {!esito && (
-          <>
-            <section className="quiz-panel mb-5 rounded-2xl p-5 sm:p-6">
-              <label
-                htmlFor="nome-studente"
-                className="mb-2 block text-sm font-semibold text-slate-200"
-              >
-                Nome e cognome
-              </label>
-
-              <input
-                id="nome-studente"
-                className="quiz-input"
-                type="text"
-                autoComplete="name"
-                maxLength={100}
-                placeholder="Inserisci nome e cognome"
-                value={nome}
-                disabled={salvataggio}
-                onChange={(e) => setNome(e.target.value)}
-              />
-
-              <div className="mt-5 flex items-center justify-between gap-3 text-sm">
-                <span className="font-semibold text-slate-200">
-                  Il tuo percorso
-                </span>
-                <span className="text-slate-400">
-                  {completate} di {domande.length} completate
-                </span>
-              </div>
-
-              <div
-                className="quiz-progress mt-3"
-                role="progressbar"
-                aria-label="Avanzamento del quiz"
-                aria-valuemin={0}
-                aria-valuemax={domande.length}
-                aria-valuenow={completate}
-              >
-                <div
-                  className="quiz-progress-fill"
-                  style={{ width: `${percentualeAvanzamento}%` }}
-                />
-              </div>
-            </section>
-
-            <div className="space-y-5">
-              {domande.map((domanda, indice) => {
-                const rispostaData = risposte[indice];
-                const haRisposto = rispostaData !== undefined;
-
-                return (
-                  <section
-                    key={indice}
-                    className="quiz-panel rounded-2xl p-5 sm:p-6"
-                  >
-                    <div className="mb-4 flex items-start gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-500/20 font-black text-indigo-200">
-                        {indice + 1}
-                      </div>
-
-                      <div className="flex-1 pt-1">
-                        <div className="mb-1 text-xs font-bold uppercase tracking-wider text-slate-400">
-                          DOMANDA {indice + 1}
-                        </div>
-                        <h2 className="text-lg font-bold leading-snug sm:text-xl">
-                          {domanda.testo}
-                        </h2>
-                      </div>
-
-                      {haRisposto && (
-                        <span aria-hidden="true" className="text-xl">
-                          {Number(rispostaData) === domanda.corretta
-                            ? "✓"
-                            : "×"}
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      {domanda.opzioni.map((opzione, opIndex) => {
-                        const selezionata =
-                          Number(rispostaData) === opIndex;
-                        const corretta =
-                          opIndex === domanda.corretta;
-
-                        let className = "quiz-option";
-
-                        if (haRisposto && corretta) {
-                          className += " correct";
-                        } else if (haRisposto && selezionata) {
-                          className += " wrong";
-                        }
-
-                        return (
-                          <button
-                            key={opIndex}
-                            type="button"
-                            className={className}
-                            disabled={haRisposto || salvataggio}
-                            aria-pressed={selezionata}
-                            onClick={() =>
-                              selezionaRisposta(indice, opIndex)
-                            }
-                          >
-                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-700/70 text-sm font-bold">
-                              {String.fromCharCode(65 + opIndex)}
-                            </span>
-
-                            <span className="flex-1 font-medium">
-                              {opzione}
-                            </span>
-
-                            {haRisposto && corretta && (
-                              <span className="text-sm font-bold text-emerald-300">
-                                Corretta
-                              </span>
-                            )}
-
-                            {haRisposto && selezionata && !corretta && (
-                              <span className="text-sm font-bold text-rose-300">
-                                Errata
-                              </span>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    {haRisposto && (
-                      <div
-                        className={`mt-4 rounded-xl p-3 text-sm font-semibold ${
-                          Number(rispostaData) === domanda.corretta
-                            ? "bg-emerald-400/10 text-emerald-300"
-                            : "bg-rose-400/10 text-rose-300"
-                        }`}
-                        aria-live="polite"
-                      >
-                        {Number(rispostaData) === domanda.corretta
-                          ? "Ottimo! Risposta corretta."
-                          : `La risposta corretta è: ${domanda.opzioni[domanda.corretta]}.`}
-                      </div>
-                    )}
-                  </section>
-                );
-              })}
-            </div>
-
-            <section className="quiz-panel mt-5 rounded-2xl p-5 sm:p-6">
-              <div className="mb-4 flex items-center justify-between">
+              <div className="qf-fields">
                 <div>
-                  <div className="text-sm text-slate-400">
-                    Punteggio provvisorio
-                  </div>
-                  <div className="mt-1 text-3xl font-black">
-                    {punteggio}
-                    <span className="text-lg font-medium text-slate-500">
-                      {" "}/ {domande.length}
-                    </span>
-                  </div>
+                  <label className="qf-label" htmlFor="qf-nome">Nome</label>
+                  <input
+                    id="qf-nome"
+                    className="qf-input"
+                    autoComplete="given-name"
+                    value={nome}
+                    onChange={(event) => setNome(event.target.value)}
+                    placeholder="Il tuo nome"
+                    maxLength={60}
+                  />
                 </div>
-
-                <div className="text-right">
-                  <div className="text-sm text-slate-400">
-                    Completamento
-                  </div>
-                  <div className="mt-1 text-xl font-bold text-indigo-300">
-                    {Math.round(percentualeAvanzamento)}%
-                  </div>
-                </div>
-              </div>
-
-              {errore && (
-                <div
-                  role="alert"
-                  className="mb-4 rounded-xl border border-rose-400/30 bg-rose-400/10 p-3 text-sm text-rose-200"
-                >
-                  {errore}
-                </div>
-              )}
-
-              <button
-                type="button"
-                className="quiz-primary"
-                disabled={
-                  salvataggio ||
-                  !nome.trim() ||
-                  completate !== domande.length
-                }
-                onClick={invia}
-              >
-                {salvataggio
-                  ? "⏳ Salvataggio in corso..."
-                  : completate !== domande.length
-                    ? `Rispondi ancora a ${domande.length - completate} domande`
-                    : "🚀 Consegna il quiz"}
-              </button>
-
-              <p className="mt-3 text-center text-xs text-slate-400">
-                Il risultato viene confermato solo dopo il salvataggio.
-              </p>
-            </section>
-          </>
-        )}
-
-        {esito && (
-          <section className="quiz-panel relative overflow-hidden rounded-3xl p-6 text-center sm:p-10">
-            {celebrato &&
-              Array.from({ length: 60 }, (_, i) => (
-                <span
-                  key={i}
-                  className="quiz-confetti"
-                  aria-hidden="true"
-                  style={{
-                    left: `${(i * 37 + 7) % 100}%`,
-                    backgroundColor: [
-                      "#fbbf24",
-                      "#34d399",
-                      "#818cf8",
-                      "#f472b6",
-                      "#fb923c",
-                      "#38bdf8"
-                    ][i % 6],
-                    animationDelay: `${(i % 15) * 0.09}s`,
-                    transform: `rotate(${i * 23}deg)`
-                  }}
-                />
-              ))}
-
-            <div className="relative z-10">
-              <div className="mb-4 text-6xl" aria-hidden="true">
-                {badge.icona}
-              </div>
-
-              <div className="text-xs font-bold uppercase tracking-widest text-indigo-300">
-                MISSIONE COMPLETATA
-              </div>
-
-              <h2 className="mt-3 text-3xl font-black sm:text-4xl">
-                {badge.titolo}
-              </h2>
-
-              <p className="mt-3 text-slate-300">
-                Complimenti, {esito.nome}!
-              </p>
-
-              <div className="my-7 rounded-2xl border border-white/10 bg-slate-950/30 p-6">
-                <div className="text-sm text-slate-400">
-                  Il tuo risultato
-                </div>
-
-                <div className="my-2 text-5xl font-black tracking-tight">
-                  {esito.percentuale}%
-                </div>
-
-                <div className="text-slate-300">
-                  {esito.punteggio} risposte corrette su {esito.totale}
-                </div>
-
-                <div className="quiz-progress mt-5">
-                  <div
-                    className="quiz-progress-fill"
-                    style={{ width: `${esito.percentuale}%` }}
+                <div>
+                  <label className="qf-label" htmlFor="qf-cognome">Cognome</label>
+                  <input
+                    id="qf-cognome"
+                    className="qf-input"
+                    autoComplete="family-name"
+                    value={cognome}
+                    onChange={(event) => setCognome(event.target.value)}
+                    placeholder="Il tuo cognome"
+                    maxLength={60}
                   />
                 </div>
               </div>
 
-              <div className="rounded-xl bg-indigo-400/10 p-4 text-sm text-indigo-200">
-                <div className="text-lg font-bold">
-                  {badge.icona} {badge.titolo}
-                </div>
-                <p className="mt-1">{badge.descrizione}</p>
+              <button
+                className="qf-button"
+                disabled={!nome.trim() || !cognome.trim()}
+                onClick={() => setStarted(true)}
+              >
+                Inizia il quiz <span aria-hidden="true">→</span>
+              </button>
+
+              <p className="qf-footer">
+                10 domande · Una risposta per domanda · Risultato finale
+              </p>
+            </section>
+          )}
+
+          {started && !finished && (
+            <section className="qf-card">
+              <div className="qf-progress-head">
+                <span>Domanda {index + 1} di {total}</span>
+                <span>{Math.round(((index + 1) / total) * 100)}% completato</span>
+              </div>
+              <div
+                className="qf-progress"
+                role="progressbar"
+                aria-valuenow={index + 1}
+                aria-valuemin={1}
+                aria-valuemax={total}
+              >
+                <div
+                  className="qf-progress-fill"
+                  style={{ width: `${((index + 1) / total) * 100}%` }}
+                />
               </div>
 
-              {celebrato && (
-                <p className="mt-4 font-semibold text-amber-200">
-                  🎉 Hai raggiunto almeno l'80%! Grande risultato!
-                </p>
+              <div className="qf-kicker">La tua sfida</div>
+              <h2 className="qf-question">{current.question}</h2>
+
+              <div className="qf-options">
+                {current.options.map((option, optionIndex) => {
+                  let className = "qf-option";
+
+                  if (answered && optionIndex === current.correct) {
+                    className += " qf-correct";
+                  } else if (
+                    answered &&
+                    optionIndex === answers[index]
+                  ) {
+                    className += " qf-wrong";
+                  }
+
+                  return (
+                    <button
+                      key={option}
+                      className={className}
+                      disabled={answered}
+                      onClick={() => chooseAnswer(optionIndex)}
+                    >
+                      <strong>{String.fromCharCode(65 + optionIndex)}.</strong>{" "}
+                      {option}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {answered && (
+                <div className="qf-feedback" aria-live="polite">
+                  <strong className={answers[index] === current.correct ? "qf-success" : "qf-error"}>
+                    {answers[index] === current.correct
+                      ? "✓ Risposta corretta!"
+                      : "✗ Non è la risposta corretta."}
+                  </strong>
+                  <span>{current.explanation}</span>
+                </div>
               )}
 
-              <p className="mt-5 text-sm text-emerald-300">
-                ✓ Risultato salvato correttamente.
+              <button
+                className="qf-button"
+                disabled={!answered}
+                onClick={nextQuestion}
+              >
+                {index === total - 1 ? "Vedi il risultato" : "Prossima domanda →"}
+              </button>
+            </section>
+          )}
+
+          {finished && (
+            <section className="qf-card qf-result">
+              <div className="qf-kicker">Missione completata</div>
+              <h1 className="qf-title">
+                {percent >= 80
+                  ? "Fantastico lavoro! 🎉"
+                  : percent >= 60
+                  ? "Buon lavoro!"
+                  : "Continua ad allenarti!"}
+              </h1>
+              <p className="qf-sub">
+                {nome.trim()} {cognome.trim()}, ecco il tuo risultato.
               </p>
 
-              <button
-                type="button"
-                className="quiz-primary mt-6"
-                onClick={ricomincia}
-              >
-                🔄 Nuovo tentativo
-              </button>
-            </div>
-          </section>
-        )}
+              <div className="qf-score">
+                <div className="qf-score-number">{percent}%</div>
+                <div className="qf-muted">{score} su {total}</div>
+              </div>
 
-        <footer className="mt-8 text-center text-xs text-slate-500">
-          Quiz Frazioni · Allenati, impara, migliora.
-        </footer>
-      </div>
-    </div>
+              <div>
+                {percent >= 80 ? (
+                  <span className="qf-badge">🏆 Badge: Campione</span>
+                ) : percent >= 60 ? (
+                  <span className="qf-badge">⭐ Badge: In crescita</span>
+                ) : (
+                  <span className="qf-badge">💪 Badge: Allenamento</span>
+                )}
+                {score === total && (
+                  <span className="qf-badge">💎 Punteggio perfetto</span>
+                )}
+              </div>
+
+              <p className="qf-sub" style={{ marginTop: 22 }}>
+                Hai risposto correttamente a {score} domande su {total}.
+                {percent >= 80
+                  ? " Hai raggiunto almeno l'80%: obiettivo raggiunto!"
+                  : " Ripassa gli argomenti e prova di nuovo."}
+              </p>
+
+              <div className="qf-feedback" aria-live="polite">
+                {saving && <span>Salvataggio del risultato in corso…</span>}
+                {saved && (
+                  <span className="qf-success">
+                    ✓ Risultato salvato correttamente.
+                  </span>
+                )}
+                {saveError && (
+                  <>
+                    <strong className="qf-error">{saveError}</strong>
+                    <button
+                      className="qf-button"
+                      onClick={saveResult}
+                      disabled={saving}
+                    >
+                      Riprova il salvataggio
+                    </button>
+                  </>
+                )}
+              </div>
+
+              <button className="qf-button qf-button-secondary" onClick={restartQuiz}>
+                ↻ Riprova il quiz
+              </button>
+            </section>
+          )}
+        </div>
+      </main>
+    </>
   );
+}
+
+const rootElement = document.getElementById("root");
+
+if (rootElement) {
+  ReactDOM.createRoot(rootElement).render(<QuizFrazioni />);
 }
